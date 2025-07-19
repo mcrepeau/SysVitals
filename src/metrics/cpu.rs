@@ -9,28 +9,23 @@ use std::collections::VecDeque;
 pub struct CpuMetrics {
     pub name: Option<String>,
     usage_percent: HistoricalMetric<f64>,
-    system: System,
 }
 
 impl CpuMetrics {
     /// Create a new CPU metrics collector
-    pub fn new() -> Self {
-        let mut system = System::new_all();
-        system.refresh_cpu_all();
-
+    pub fn new(system: &System) -> Self {
+        let system = system;
         let initial_usage = system.global_cpu_usage() as f64;
-
         Self {
             name: get_cpu_name(&system),
             usage_percent: HistoricalMetric::new(initial_usage),
-            system,
         }
     }
 
     /// Update CPU metrics
-    pub fn update(&mut self) -> Result<(), AppError> {
-        self.system.refresh_cpu_all();
-        let new_usage = self.system.global_cpu_usage() as f64;
+    pub fn update(&mut self, system: &mut System) -> Result<(), AppError> {
+        system.refresh_cpu_all();
+        let new_usage = system.global_cpu_usage() as f64;
         self.usage_percent.update(new_usage);
         Ok(())
     }
@@ -57,8 +52,10 @@ mod tests {
 
     #[test]
     fn test_cpu_metrics() {
-        let mut cpu = CpuMetrics::new();
-        assert!(cpu.update().is_ok());
+        let mut system = System::new_all();
+        system.refresh_cpu_all();
+        let mut cpu = CpuMetrics::new(&system);
+        assert!(cpu.update(&mut system).is_ok());
         let usage = cpu.usage_percent();
         assert!(usage >= 0.0 && usage <= 100.0);
         assert!(!cpu.usage_history().is_empty());
