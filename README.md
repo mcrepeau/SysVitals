@@ -10,12 +10,22 @@ SysVitals is a modern terminal-based system monitor written in Rust. It provides
 - Configurable refresh rate
 - Easy to quit with 'q' or 'Esc'
 
-## Prerequisites
+## Installation
 
+### Linux/MacOS
+
+Run `curl -fsSL https://github.com/mcrepeau/SysVitals/raw/refs/heads/main/install.sh | bash`
+
+### Windows
+
+Run `irm https://github.com/mcrepeau/SysVitals/raw/refs/heads/main/install.ps1 | iex`
+
+
+## Compile from source
+
+### Pre-requisites
 - Rust (latest stable version)
 - Cargo (Rust's package manager)
-
-## Installation
 
 1. Clone the repository:
 
