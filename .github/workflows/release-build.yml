@@ -4,6 +4,10 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build-linux-windows:
     name: Build on ${{ matrix.target }}
@@ -22,11 +26,24 @@ jobs:
       - name: Build with cross
         run: cross build --release --target ${{ matrix.target }}
 
+      - name: Rename binary for release
+        run: |
+          EXT=""
+          if [[ "${{ matrix.target }}" == *windows* ]]; then EXT=".exe"; fi
+          mv target/${{ matrix.target }}/release/sysvitals$EXT sysvitals-${{ matrix.target }}$EXT
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: sysvitals-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/sysvitals*
+          path: sysvitals-${{ matrix.target }}*
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: sysvitals-${{ matrix.target }}*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos:
     name: Build on macOS
@@ -49,8 +66,19 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
+      - name: Rename binary for release
+        run: |
+          mv target/${{ matrix.target }}/release/sysvitals sysvitals-${{ matrix.target }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: sysvitals-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/sysvitals* 
+          path: sysvitals-${{ matrix.target }}
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: sysvitals-${{ matrix.target }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
