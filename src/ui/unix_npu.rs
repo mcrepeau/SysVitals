@@ -19,7 +19,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, npu: &crate::metrics::unix_npu:
     // Title
     let usage = npu.usage_percent();
     let title = ratatui::text::Span::styled(
-        format!("🧠 NPU - Unix ({:.0}%)", usage),
+        format!("🧠 Neural Processing Unit ({:.0}%)", usage),
         Style::default().fg(Color::White).bold(),
     );
     frame.render_widget(Paragraph::new(title), chunks[0]);
@@ -72,7 +72,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, npu: &crate::metrics::unix_npu:
 
     // Frequency information
     let freq = npu.frequency_mhz();
-    let freq_text = format!("Frequency: {} MHz | Path: {}", freq, npu.npu_path());
+    let freq_text = format!("Frequency: {} MHz", freq);
     let freq_span = ratatui::text::Span::styled(
         freq_text,
         Style::default().fg(Color::Cyan),

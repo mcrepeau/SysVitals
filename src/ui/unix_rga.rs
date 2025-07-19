@@ -19,7 +19,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, rga: &crate::metrics::unix_rga:
     // Title
     let usage = rga.usage_percent();
     let title = ratatui::text::Span::styled(
-        format!("🎨 RGA - Unix ({:.0}%)", usage),
+        format!("🎨 Raster Graphic Acceleration Unit ({:.0}%)", usage),
         Style::default().fg(Color::White).bold(),
     );
     frame.render_widget(Paragraph::new(title), chunks[0]);

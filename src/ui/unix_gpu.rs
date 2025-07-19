@@ -19,7 +19,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, gpu: &crate::metrics::unix_gpu:
     // Title
     let usage = gpu.usage_percent();
     let title = ratatui::text::Span::styled(
-        format!("🎮 GPU - Unix ({:.0}%)", usage),
+        format!("🎮 GPU ({:.0}%)", usage),
         Style::default().fg(Color::White).bold(),
     );
     frame.render_widget(Paragraph::new(title), chunks[0]);
@@ -72,7 +72,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, gpu: &crate::metrics::unix_gpu:
 
     // Frequency information
     let freq = gpu.frequency_mhz();
-    let freq_text = format!("Frequency: {} MHz | Path: {}", freq, gpu.gpu_path());
+    let freq_text = format!("Frequency: {} MHz", freq);
     let freq_span = ratatui::text::Span::styled(
         freq_text,
         Style::default().fg(Color::Cyan),

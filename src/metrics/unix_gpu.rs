@@ -105,8 +105,8 @@ impl UnixGpuMetrics {
                 .parse()
                 .map_err(|e| AppError::System(format!("Failed to parse frequency from {}: {}", freq_path, e)))?;
             
-            // Convert from kHz to MHz
-            let freq_mhz = freq_khz / 1000;
+            // Convert from Hz to MHz
+            let freq_mhz = freq_khz / 1000000;
             self.frequency_mhz.update(freq_mhz);
         }
         Ok(())
