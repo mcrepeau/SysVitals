@@ -762,7 +762,7 @@ dependencies = [
 
 [[package]]
 name = "sysvitals"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "crossterm 0.29.0",
  "directories",

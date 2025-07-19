@@ -1,6 +1,6 @@
 use crate::core::config::Config;
 use crate::core::error::AppError;
-use crate::metrics::SystemMetrics;
+use crate::metrics::{SystemMetrics, UnixSystemMetrics};
 use crate::ui::{Ui, UiMode};
 use crossterm::event::{Event, KeyCode};
 use ratatui::Frame;
@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 pub struct App {
     config: Config,
     system: SystemMetrics,
+    unix_metrics: Option<UnixSystemMetrics>,
     ui: Ui,
     last_update: Instant,
     update_interval: Duration,
@@ -23,6 +24,11 @@ const DEBOUNCE_DELAY: Duration = Duration::from_millis(200);
 impl App {
     /// Create a new application instance
     pub fn new() -> Result<Self, AppError> {
+        Self::new_with_metrics(false)
+    }
+
+    /// Create a new application instance with optional Unix metrics
+    pub fn new_with_metrics(use_unix_metrics: bool) -> Result<Self, AppError> {
         let config = Config::load().unwrap_or_default();
         let system = SystemMetrics::new();
 
@@ -52,9 +58,26 @@ impl App {
             ui.selected_interface = interfaces.iter().position(|n| n == iface).unwrap_or(0);
         }
 
+        let unix_metrics = if use_unix_metrics {
+            Some(UnixSystemMetrics::new())
+        } else {
+            None
+        };
+
+        // Enable NPU and RGA if Unix metrics are available and they exist
+        if let Some(ref unix_metrics) = unix_metrics {
+            if unix_metrics.has_npu() {
+                ui.show_npu = true;
+            }
+            if unix_metrics.has_rga() {
+                ui.show_rga = true;
+            }
+        }
+
         Ok(Self {
             config,
             system,
+            unix_metrics,
             ui,
             last_update: Instant::now(),
             update_interval: presets[idx],
@@ -101,7 +124,8 @@ impl App {
                         }
                     }
                     KeyCode::Down => {
-                        if self.ui.selected_option < 4 {
+                        let max_option = if self.unix_metrics.is_some() { 6 } else { 4 };
+                        if self.ui.selected_option < max_option {
                             self.ui.selected_option += 1;
                         }
                     }
@@ -126,6 +150,16 @@ impl App {
                                 2 => self.ui.show_memory = !self.ui.show_memory,
                                 3 => self.ui.show_gpu = !self.ui.show_gpu,
                                 4 => self.ui.show_network = !self.ui.show_network,
+                                5 => {
+                                    if self.unix_metrics.is_some() {
+                                        self.ui.show_npu = !self.ui.show_npu;
+                                    }
+                                }
+                                6 => {
+                                    if self.unix_metrics.is_some() {
+                                        self.ui.show_rga = !self.ui.show_rga;
+                                    }
+                                }
                                 _ => {}
                             }
                             config_changed = true;
@@ -151,6 +185,7 @@ impl App {
                 self.config.show_memory = self.ui.show_memory;
                 self.config.show_gpu = self.ui.show_gpu;
                 self.config.show_network = self.ui.show_network;
+                // Note: NPU and RGA settings are not saved to config as they're Unix-specific
 
                 let interfaces = self.system.network().interface_names();
                 if !interfaces.is_empty() && self.ui.selected_interface < interfaces.len() {
@@ -173,6 +208,12 @@ impl App {
         let now = Instant::now();
         if now.duration_since(self.last_update) >= self.update_interval {
             self.system.update()?;
+            
+            // Update Unix metrics if available
+            if let Some(unix_metrics) = &mut self.unix_metrics {
+                unix_metrics.update()?;
+            }
+            
             self.last_update = now;
             self.stats_refreshed = true;
         }
@@ -181,12 +222,26 @@ impl App {
 
     /// Render the UI
     pub fn draw(&mut self, frame: &mut Frame) {
-        self.ui.draw(frame, &self.system, self.stats_refreshed);
+        self.ui.draw(frame, &self.system, self.unix_metrics.as_ref(), self.stats_refreshed);
         self.stats_refreshed = false;
     }
 
     /// Check if the application should quit
     pub fn should_quit(&self) -> bool {
         self.should_quit
+    }
+
+    /// Get available metrics types
+    pub fn available_metrics(&self) -> Vec<&'static str> {
+        if let Some(unix_metrics) = &self.unix_metrics {
+            unix_metrics.available_metrics()
+        } else {
+            vec!["CPU", "Memory", "Network", "GPU"]
+        }
+    }
+
+    /// Check if using Unix metrics
+    pub fn is_using_unix_metrics(&self) -> bool {
+        self.unix_metrics.is_some()
     }
 }

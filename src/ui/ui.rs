@@ -1,5 +1,5 @@
-use crate::metrics::SystemMetrics;
-use crate::ui::{cpu, memory, network, gpu};
+use crate::metrics::{SystemMetrics, UnixSystemMetrics};
+use crate::ui::{cpu, memory, network, gpu, unix_cpu, unix_gpu, unix_npu, unix_rga};
 use ratatui::widgets::{Block, Borders, Paragraph, BorderType};
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
@@ -17,6 +17,8 @@ pub struct Ui {
     pub show_memory: bool,
     pub show_gpu: bool,
     pub show_network: bool,
+    pub show_npu: bool,
+    pub show_rga: bool,
     pub selected_option: usize, // for navigating the menu
     pub selected_interface: usize, // index of selected network interface
     pub update_interval_presets: Vec<Duration>,
@@ -31,6 +33,8 @@ impl Ui {
             show_memory: true,
             show_gpu: true,
             show_network: true,
+            show_npu: false,
+            show_rga: false,
             selected_option: 0,
             selected_interface: 0,
             update_interval_presets: vec![
@@ -43,7 +47,7 @@ impl Ui {
         }
     }
 
-    pub fn draw(&mut self, frame: &mut Frame, system: &SystemMetrics, stats_refreshed: bool) {
+    pub fn draw(&mut self, frame: &mut Frame, system: &SystemMetrics, unix_metrics: Option<&UnixSystemMetrics>, stats_refreshed: bool) {
         let area = frame.size();
 
         let instructions = match self.mode {
@@ -60,12 +64,12 @@ impl Ui {
         frame.render_widget(block, area);
 
         match self.mode {
-            UiMode::Normal => self.draw_main_ui(frame, area, system, stats_refreshed),
-            UiMode::OptionsMenu => self.draw_options_menu(frame, area, system),
+            UiMode::Normal => self.draw_main_ui(frame, area, system, unix_metrics, stats_refreshed),
+            UiMode::OptionsMenu => self.draw_options_menu(frame, area, system, unix_metrics),
         }
     }
 
-    fn draw_main_ui(&self, frame: &mut Frame, area: Rect, system: &SystemMetrics, stats_refreshed: bool) {
+    fn draw_main_ui(&self, frame: &mut Frame, area: Rect, system: &SystemMetrics, unix_metrics: Option<&UnixSystemMetrics>, stats_refreshed: bool) {
         let inner_area = Rect {
             x: area.x + 2,
             y: area.y + 2,
@@ -75,11 +79,57 @@ impl Ui {
 
         let mut enabled_metrics: Vec<(&str, Box<dyn FnOnce(&mut Frame, Rect)>)> = vec![];
 
-        if self.show_cpu {
-            let cpu_data = system.cpu();
-            enabled_metrics.push(("cpu", Box::new(move |f, r| cpu::draw_chart(f, r, cpu_data))));
+        // Use Unix metrics if available, otherwise fall back to standard metrics
+        if let Some(unix_metrics) = unix_metrics {
+            // Unix CPU metrics
+            if self.show_cpu {
+                if let Some(cpu_data) = unix_metrics.cpu() {
+                    enabled_metrics.push(("cpu", Box::new(move |f, r| unix_cpu::draw_chart(f, r, cpu_data))));
+                } else {
+                    // Fallback to standard CPU metrics
+                    let cpu_data = system.cpu();
+                    enabled_metrics.push(("cpu", Box::new(move |f, r| cpu::draw_chart(f, r, cpu_data))));
+                }
+            }
+
+            // Unix GPU metrics
+            if self.show_gpu {
+                if let Some(gpu_data) = unix_metrics.gpu() {
+                    enabled_metrics.push(("gpu", Box::new(move |f, r| unix_gpu::draw_chart(f, r, gpu_data))));
+                } else if let Some(gpu_data) = system.gpu() {
+                    // Fallback to standard GPU metrics
+                    enabled_metrics.push(("gpu", Box::new(move |f, r| gpu::draw_chart(f, r, gpu_data))));
+                }
+            }
+
+            // Unix NPU metrics
+            if self.show_npu {
+                if let Some(npu_data) = unix_metrics.npu() {
+                    enabled_metrics.push(("npu", Box::new(move |f, r| unix_npu::draw_chart(f, r, npu_data))));
+                }
+            }
+
+            // Unix RGA metrics
+            if self.show_rga {
+                if let Some(rga_data) = unix_metrics.rga() {
+                    enabled_metrics.push(("rga", Box::new(move |f, r| unix_rga::draw_chart(f, r, rga_data))));
+                }
+            }
+        } else {
+            // Standard metrics only
+            if self.show_cpu {
+                let cpu_data = system.cpu();
+                enabled_metrics.push(("cpu", Box::new(move |f, r| cpu::draw_chart(f, r, cpu_data))));
+            }
+
+            if self.show_gpu {
+                if let Some(gpu_data) = system.gpu() {
+                    enabled_metrics.push(("gpu", Box::new(move |f, r| gpu::draw_chart(f, r, gpu_data))));
+                }
+            }
         }
 
+        // Memory and network are always from standard metrics
         if self.show_memory {
             let memory_data = system.memory();
             enabled_metrics.push(("memory", Box::new(move |f, r| memory::draw_chart(f, r, memory_data))));
@@ -94,12 +144,6 @@ impl Ui {
                 "network",
                 Box::new(move |f, r| network::draw_chart(f, r, network_data, selected_iface.as_deref())),
             ));
-        }
-
-        if self.show_gpu {
-            if let Some(gpu_data) = system.gpu() {
-                enabled_metrics.push(("gpu", Box::new(move |f, r| gpu::draw_chart(f, r, gpu_data))));
-            }
         }
 
         let constraints = vec![Constraint::Length(12); enabled_metrics.len()];
@@ -129,7 +173,7 @@ impl Ui {
         });
     }
 
-    fn draw_options_menu(&self, frame: &mut Frame, area: Rect, system: &SystemMetrics) {
+    fn draw_options_menu(&self, frame: &mut Frame, area: Rect, system: &SystemMetrics, unix_metrics: Option<&UnixSystemMetrics>) {
         let interface_names = system.network().interface_names();
 
         let mut lines: Vec<String> = vec![];
@@ -151,12 +195,18 @@ impl Ui {
         lines.push(" Metrics:".bold().to_string());
         lines.push(String::new());
 
-        let options = [
+        let mut options = vec![
             ("CPU", self.show_cpu),
             ("Memory", self.show_memory),
             ("GPU", self.show_gpu),
             ("Network", self.show_network),
         ];
+
+        // Add Unix-specific options if Unix metrics are available
+        if unix_metrics.is_some() {
+            options.push(("NPU", self.show_npu));
+            options.push(("RGA", self.show_rga));
+        }
 
         // Metric toggles, index shifted by 1 because update interval is now at 0
         for (i, (label, enabled)) in options.iter().enumerate() {
