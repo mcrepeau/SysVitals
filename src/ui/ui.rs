@@ -1,5 +1,5 @@
 use crate::metrics::SystemMetrics;
-use crate::ui::{cpu, disk, gpu, memory, network};
+use crate::ui::{bars, cpu, disk, gpu, memory, network};
 use ratatui::widgets::{Block, Borders, Paragraph, BorderType};
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
@@ -22,6 +22,7 @@ pub struct Ui {
     pub selected_interface: usize,
     pub update_interval_presets: Vec<Duration>,
     pub selected_update_interval_idx: usize,
+    pub compact_view: bool,
 }
 
 impl Ui {
@@ -49,6 +50,7 @@ impl Ui {
                 Duration::from_secs(5),
             ],
             selected_update_interval_idx: 1,
+            compact_view: false,
         }
     }
 
@@ -69,7 +71,7 @@ impl Ui {
         let area = frame.area();
 
         let instructions = match self.mode {
-            UiMode::Normal => "<q>/<Esc>: Quit | <o>: Options".bold(),
+            UiMode::Normal => "<q>/<Esc>: Quit | <o>: Options | <v>: Toggle view".bold(),
             UiMode::OptionsMenu => "<o>/<Esc>: Close Options | <↑↓>: Navigate | <Enter>: Toggle | <Tab>: Cycle Interface".yellow().bold(),
         };
 
@@ -94,6 +96,26 @@ impl Ui {
             width: area.width - 4,
             height: area.height - 4,
         };
+
+        if self.compact_view {
+            bars::draw_bars(
+                frame, inner_area, system,
+                self.show_cpu, self.show_memory, self.show_gpu,
+                self.show_network, self.show_disk,
+                self.selected_interface,
+            );
+            // Blink dot still shown in compact mode
+            let blink_style = if stats_refreshed {
+                Style::default().fg(Color::Green)
+            } else {
+                Style::default().fg(Color::Black)
+            };
+            frame.render_widget(
+                Paragraph::new("•").style(blink_style).block(Block::default().borders(Borders::NONE)),
+                Rect { x: area.x + area.width - 3, y: area.y, width: 1, height: 1 },
+            );
+            return;
+        }
 
         let mut enabled_metrics: Vec<Box<dyn FnOnce(&mut Frame, Rect)>> = vec![];
 

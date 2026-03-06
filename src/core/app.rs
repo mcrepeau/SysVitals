@@ -80,6 +80,10 @@ impl App {
                     KeyCode::Char('o') | KeyCode::Char('O') => {
                         self.ui.mode = UiMode::OptionsMenu;
                     }
+                    KeyCode::Char('v') | KeyCode::Char('V') => {
+                        self.ui.compact_view = !self.ui.compact_view;
+                        config_changed = true;
+                    }
                     _ => {}
                 },
                 UiMode::OptionsMenu => match key_code {
@@ -186,6 +190,7 @@ impl App {
         ui.show_gpu     = config.show_gpu;
         ui.show_network = config.show_network;
         ui.show_disk    = config.show_disk;
+        ui.compact_view = config.compact_view;
     }
 
     /// Pull the current Ui visibility state back into Config after any change.
@@ -195,5 +200,6 @@ impl App {
         self.config.show_gpu     = self.ui.show_gpu;
         self.config.show_network = self.ui.show_network;
         self.config.show_disk    = self.ui.show_disk;
+        self.config.compact_view = self.ui.compact_view;
     }
 }

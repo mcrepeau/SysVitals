@@ -13,6 +13,8 @@ pub struct Config {
     pub show_gpu: bool,
     pub show_network: bool,
     pub show_disk: bool,
+    #[serde(default)]
+    pub compact_view: bool,
     pub selected_network_interface: Option<String>,
 
     #[serde(skip)]
@@ -30,6 +32,7 @@ impl Default for Config {
             show_gpu: true,
             show_network: true,
             show_disk: true,
+            compact_view: false,
             selected_network_interface: None,
             config_path,
         }
