@@ -34,8 +34,22 @@ pub fn draw_bars(
     let mut rows: Vec<Row> = vec![];
 
     if show_cpu {
-        let pct = system.cpu().usage_percent();
+        let cpu = system.cpu();
+        let pct = cpu.usage_percent();
         rows.push(Row::new("CPU", pct / 100.0, usage_color(pct), format!("{pct:.1}%")));
+
+        if let Some(temp) = cpu.temperature() {
+            rows.push(Row::new("TEMP", temp / 100.0, usage_color(temp), format!("{temp:.1}°C")));
+        }
+
+        let load = SystemMetrics::load_average();
+        let load_pct = (load.one / cpu.core_count.max(1) as f64) * 100.0;
+        rows.push(Row::new(
+            "LOAD",
+            load_pct / 100.0,
+            usage_color(load_pct),
+            format!("{:.2}  {:.2}  {:.2}", load.one, load.five, load.fifteen),
+        ));
     }
 
     if show_memory {
@@ -49,6 +63,18 @@ pub fn draw_bars(
             usage_color(pct),
             format!("{used_gb:.1} / {total_gb:.1} GB"),
         ));
+
+        if mem.total_swap > 0 {
+            let swap_pct = mem.swap_used_percent();
+            let swap_used_gb  = mem.swap_used_bytes() as f64 / 1024.0f64.powi(3);
+            let swap_total_gb = mem.total_swap as f64 / 1024.0f64.powi(3);
+            rows.push(Row::new(
+                "SWP",
+                swap_pct / 100.0,
+                usage_color(swap_pct),
+                format!("{swap_used_gb:.1} / {swap_total_gb:.1} GB"),
+            ));
+        }
     }
 
     if show_gpu {

@@ -1,3 +1,4 @@
+use crate::core::args::CliArgs;
 use crate::core::config::Config;
 use crate::core::error::AppError;
 use crate::metrics::SystemMetrics;
@@ -21,12 +22,13 @@ pub struct App {
 
 impl App {
     /// Create a new application instance
-    pub fn new() -> Result<Self, AppError> {
+    pub fn new(args: &CliArgs) -> Result<Self, AppError> {
         let config = Config::load().unwrap_or_default();
         let mut system = SystemMetrics::new();
         let mut ui = Ui::new();
 
         Self::apply_config_to_ui_inner(&config, &mut ui);
+        Self::apply_args_to_ui(args, &mut ui);
 
         // Map refresh_rate ms to index in update_interval_presets
         let idx = ui.update_interval_presets
@@ -191,6 +193,29 @@ impl App {
         ui.show_network = config.show_network;
         ui.show_disk    = config.show_disk;
         ui.compact_view = config.compact_view;
+    }
+
+    /// Apply CLI overrides to the Ui (session-only; does not mutate Config).
+    fn apply_args_to_ui(args: &CliArgs, ui: &mut Ui) {
+        if let Some(v) = args.compact      { ui.compact_view  = v; }
+        if let Some(v) = args.show_cpu     { ui.show_cpu      = v; }
+        if let Some(v) = args.show_memory  { ui.show_memory   = v; }
+        if let Some(v) = args.show_gpu     { ui.show_gpu      = v; }
+        if let Some(v) = args.show_disk    { ui.show_disk     = v; }
+        if let Some(v) = args.show_network { ui.show_network  = v; }
+        if let Some(ms) = args.interval_ms {
+            let target = std::time::Duration::from_millis(ms);
+            // Pick the preset whose distance from the requested value is smallest.
+            ui.selected_update_interval_idx = ui.update_interval_presets
+                .iter()
+                .enumerate()
+                .min_by_key(|(_, d)| {
+                    let diff = d.as_millis() as i64 - target.as_millis() as i64;
+                    diff.unsigned_abs()
+                })
+                .map(|(i, _)| i)
+                .unwrap_or(1);
+        }
     }
 
     /// Pull the current Ui visibility state back into Config after any change.

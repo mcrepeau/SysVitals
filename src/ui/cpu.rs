@@ -6,15 +6,24 @@ use ratatui::widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Paragrap
 use crate::ui::chart_utils::{chart_areas, trim_to_width, usage_color};
 
 pub fn draw_chart(frame: &mut Frame, area: Rect, cpu: &crate::metrics::cpu::CpuMetrics) {
+    use crate::metrics::SystemMetrics;
+
     let (title_area, chart_area) = chart_areas(area);
 
     let usage = cpu.usage_percent();
-    let cpu_name = cpu.name.clone().unwrap_or_else(|| "Unknown".to_string());
+    let cpu_name = cpu.name.as_deref().unwrap_or("Unknown");
+    let load = SystemMetrics::load_average();
+
+    let temp_str = cpu.temperature()
+        .map(|t| format!("  {t:.0}°C"))
+        .unwrap_or_default();
+    let title = format!(
+        "🧠 CPU - {} ({:.0}%){temp_str}  Load: {:.2} {:.2} {:.2}",
+        cpu_name, usage, load.one, load.five, load.fifteen,
+    );
+
     frame.render_widget(
-        Paragraph::new(ratatui::text::Span::styled(
-            format!("🧠 CPU - {} ({:.0}%)", cpu_name, usage),
-            Style::default().fg(Color::White).bold(),
-        )),
+        Paragraph::new(ratatui::text::Span::styled(title, Style::default().fg(Color::White).bold())),
         title_area,
     );
 

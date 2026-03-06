@@ -2,7 +2,7 @@
 
 use crate::core::error::AppError;
 use crate::metrics::{cpu, disk, gpu, memory, network};
-use sysinfo::System;
+use sysinfo::{LoadAvg, System};
 use std::time::Duration;
 
 const HISTORY_WINDOW: Duration = Duration::from_secs(120);
@@ -65,4 +65,7 @@ impl SystemMetrics {
     pub fn network(&self) -> &network::NetworkMetrics { &self.network }
     pub fn disk(&self) -> &disk::DiskMetrics { &self.disk }
     pub fn gpu(&self) -> Option<&gpu::GpuMetrics> { self.gpu.as_ref() }
+
+    /// Current 1/5/15-minute load averages. Free read — no refresh needed.
+    pub fn load_average() -> LoadAvg { System::load_average() }
 }
