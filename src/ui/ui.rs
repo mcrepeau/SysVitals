@@ -71,8 +71,8 @@ impl Ui {
         let area = frame.area();
 
         let instructions = match self.mode {
-            UiMode::Normal => "<q>/<Esc>: Quit | <o>: Options | <v>: Toggle view".bold(),
-            UiMode::OptionsMenu => "<o>/<Esc>: Close Options | <↑↓>: Navigate | <Enter>: Toggle | <Tab>: Cycle Interface".yellow().bold(),
+            UiMode::Normal => "<q>/<Esc>: Quit | <o>: Options | <v>: Toggle view".gray().bold(),
+            UiMode::OptionsMenu => "<o>/<Esc>: Close Options | <↑↓>: Navigate | <Enter>: Toggle | <Tab>: Cycle Interface".gray().bold(),
         };
 
         let block = Block::bordered()
@@ -198,7 +198,7 @@ impl Ui {
 
         let paragraph = Paragraph::new(lines.into_iter().map(|l| l.into()).collect::<Vec<_>>())
             .block(Block::default().title("Options").borders(Borders::ALL))
-            .style(Style::default().fg(Color::Yellow));
+            .style(Style::default().fg(Color::White));
 
         frame.render_widget(paragraph, Rect {
             x: area.width / 4,

@@ -41,15 +41,6 @@ pub fn draw_bars(
         if let Some(temp) = cpu.temperature() {
             rows.push(Row::new("TEMP", temp / 100.0, usage_color(temp), format!("{temp:.1}°C")));
         }
-
-        let load = SystemMetrics::load_average();
-        let load_pct = (load.one / cpu.core_count.max(1) as f64) * 100.0;
-        rows.push(Row::new(
-            "LOAD",
-            load_pct / 100.0,
-            usage_color(load_pct),
-            format!("{:.2}  {:.2}  {:.2}", load.one, load.five, load.fifteen),
-        ));
     }
 
     if show_memory {
@@ -69,7 +60,7 @@ pub fn draw_bars(
             let swap_used_gb  = mem.swap_used_bytes() as f64 / 1024.0f64.powi(3);
             let swap_total_gb = mem.total_swap as f64 / 1024.0f64.powi(3);
             rows.push(Row::new(
-                "SWP",
+                "SWAP",
                 swap_pct / 100.0,
                 usage_color(swap_pct),
                 format!("{swap_used_gb:.1} / {swap_total_gb:.1} GB"),
@@ -108,8 +99,8 @@ pub fn draw_bars(
         let write = disk.write_rate();
         let read_bound  = dynamic_bound(disk.read_history());
         let write_bound = dynamic_bound(disk.write_history());
-        rows.push(Row::new("DSK ↓", read  / read_bound,  Color::Cyan, format!("{} MB/s", format_rate(read))));
-        rows.push(Row::new("DSK ↑", write / write_bound, Color::Blue, format!("{} MB/s", format_rate(write))));
+        rows.push(Row::new("DISK ↓", read  / read_bound,  Color::Yellow, format!("{} MB/s", format_rate(read))));
+        rows.push(Row::new("DISK ↑", write / write_bound, Color::Blue, format!("{} MB/s", format_rate(write))));
     }
 
     if rows.is_empty() {
