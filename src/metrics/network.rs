@@ -16,11 +16,14 @@ pub struct NetworkMetrics {
 impl NetworkMetrics {
     /// Create a new network metrics collector
     pub fn new() -> Self {
-        Self {
-            networks: Networks::new_with_refreshed_list(),
-            interface_stats: BTreeMap::new(),
-            last_update: Instant::now(),
-        }
+        let networks = Networks::new_with_refreshed_list();
+        // Pre-populate interface_stats so interface names are known immediately,
+        // before the first update() call populates real rate data.
+        let interface_stats = networks
+            .iter()
+            .map(|(name, _)| (name.to_string(), (HistoricalMetric::new(0.0), HistoricalMetric::new(0.0))))
+            .collect();
+        Self { networks, interface_stats, last_update: Instant::now() }
     }
 
     /// Update network metrics
