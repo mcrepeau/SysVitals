@@ -118,8 +118,8 @@ impl App {
                                 1 => self.ui.show_cpu = !self.ui.show_cpu,
                                 2 => self.ui.show_memory = !self.ui.show_memory,
                                 3 => self.ui.show_gpu = !self.ui.show_gpu,
-                                4 => self.ui.show_network = !self.ui.show_network,
-                                5 => self.ui.show_disk = !self.ui.show_disk,
+                                4 => self.ui.show_disk = !self.ui.show_disk,
+                                5 => self.ui.show_network = !self.ui.show_network,
                                 _ => {}
                             }
                             config_changed = true;

@@ -62,8 +62,8 @@ impl Ui {
             ("CPU",     self.show_cpu),
             ("Memory",  self.show_memory),
             ("GPU",     self.show_gpu),
-            ("Network", self.show_network),
             ("Disk",    self.show_disk),
+            ("Network", self.show_network),
         ]
     }
 
@@ -127,16 +127,16 @@ impl Ui {
             let memory_data = system.memory();
             enabled_metrics.push(Box::new(move |f, r| memory::draw_chart(f, r, memory_data)));
         }
+        if self.show_disk {
+            let disk_data = system.disk();
+            enabled_metrics.push(Box::new(move |f, r| disk::draw_chart(f, r, disk_data)));
+        }
         if self.show_network {
             let network_data = system.network();
             let interfaces = network_data.interface_names();
             let selected = self.selected_interface.min(interfaces.len().saturating_sub(1));
             let selected_iface = interfaces.get(selected).cloned();
             enabled_metrics.push(Box::new(move |f, r| network::draw_chart(f, r, network_data, selected_iface.as_deref())));
-        }
-        if self.show_disk {
-            let disk_data = system.disk();
-            enabled_metrics.push(Box::new(move |f, r| disk::draw_chart(f, r, disk_data)));
         }
         if self.show_gpu {
             if let Some(gpu_data) = system.gpu() {

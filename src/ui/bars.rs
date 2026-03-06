@@ -3,7 +3,7 @@
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::prelude::{Color, Style, Stylize};
-use ratatui::widgets::{LineGauge, Paragraph};
+use ratatui::widgets::{Gauge, Paragraph};
 use crate::metrics::SystemMetrics;
 use crate::ui::chart_utils::{dynamic_bound, format_rate, usage_color};
 
@@ -70,8 +70,8 @@ pub fn draw_bars(
                 let tx = *tx_hist.current();
                 let rx_bound = dynamic_bound(rx_hist.history());
                 let tx_bound = dynamic_bound(tx_hist.history());
-                rows.push(Row::new("↓ NET", rx / rx_bound, Color::Green, format!("{} Mb/s", format_rate(rx))));
-                rows.push(Row::new("↑ NET", tx / tx_bound, Color::Red,   format!("{} Mb/s", format_rate(tx))));
+                rows.push(Row::new("NET ↓", rx / rx_bound, Color::Green, format!("{} Mb/s", format_rate(rx))));
+                rows.push(Row::new("NET ↑", tx / tx_bound, Color::Red,   format!("{} Mb/s", format_rate(tx))));
             }
         }
     }
@@ -82,47 +82,53 @@ pub fn draw_bars(
         let write = disk.write_rate();
         let read_bound  = dynamic_bound(disk.read_history());
         let write_bound = dynamic_bound(disk.write_history());
-        rows.push(Row::new("↓ DSK", read  / read_bound,  Color::Cyan, format!("{} MB/s", format_rate(read))));
-        rows.push(Row::new("↑ DSK", write / write_bound, Color::Blue, format!("{} MB/s", format_rate(write))));
+        rows.push(Row::new("DSK ↓", read  / read_bound,  Color::Cyan, format!("{} MB/s", format_rate(read))));
+        rows.push(Row::new("DSK ↑", write / write_bound, Color::Blue, format!("{} MB/s", format_rate(write))));
     }
 
     if rows.is_empty() {
         return;
     }
 
+    // Each row is 3 lines tall: label + value, gauge bar, then 1 line of padding.
     let row_areas = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(1); rows.len()])
+        .constraints(vec![Constraint::Length(3); rows.len()])
         .split(area);
 
     const LABEL_W: u16 = 8;
     const VALUE_W: u16 = 18;
 
     for (row, &row_area) in rows.into_iter().zip(row_areas.iter()) {
-        let cols = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Length(LABEL_W),
-                Constraint::Min(0),
-                Constraint::Length(VALUE_W),
-            ])
+        let lines = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(1), Constraint::Length(1)])
             .split(row_area);
+
+        // Top line: label (left) and value (right)
+        let header_cols = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Length(LABEL_W), Constraint::Min(0), Constraint::Length(VALUE_W)])
+            .split(lines[0]);
 
         frame.render_widget(
             Paragraph::new(row.label).style(Style::default().fg(Color::White).bold()),
-            cols[0],
-        );
-        frame.render_widget(
-            LineGauge::default()
-                .ratio(row.ratio)
-                .filled_style(Style::default().fg(row.color)),
-            cols[1],
+            header_cols[0],
         );
         frame.render_widget(
             Paragraph::new(row.value)
                 .alignment(Alignment::Right)
                 .style(Style::default().fg(row.color)),
-            cols[2],
+            header_cols[2],
+        );
+
+        // Bottom line: full-width gauge bar
+        frame.render_widget(
+            Gauge::default()
+                .ratio(row.ratio)
+                .label("")
+                .gauge_style(Style::default().fg(row.color)),
+            lines[1],
         );
     }
 }
