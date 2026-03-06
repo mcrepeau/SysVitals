@@ -14,10 +14,9 @@ pub struct CpuMetrics {
 impl CpuMetrics {
     /// Create a new CPU metrics collector
     pub fn new(system: &System) -> Self {
-        let system = system;
         let initial_usage = system.global_cpu_usage() as f64;
         Self {
-            name: get_cpu_name(&system),
+            name: get_cpu_name(system),
             usage_percent: HistoricalMetric::new(initial_usage),
         }
     }

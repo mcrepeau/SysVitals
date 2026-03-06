@@ -17,13 +17,16 @@ pub struct Ui {
     pub show_memory: bool,
     pub show_gpu: bool,
     pub show_network: bool,
-    pub selected_option: usize, // for navigating the menu
-    pub selected_interface: usize, // index of selected network interface
+    pub selected_option: usize,
+    pub selected_interface: usize,
     pub update_interval_presets: Vec<Duration>,
     pub selected_update_interval_idx: usize,
 }
 
 impl Ui {
+    /// Number of navigable options in the options menu (update interval + 4 metric toggles).
+    pub const MENU_OPTION_COUNT: usize = 5;
+
     pub fn new() -> Self {
         Self {
             mode: UiMode::Normal,
@@ -44,7 +47,7 @@ impl Ui {
     }
 
     pub fn draw(&mut self, frame: &mut Frame, system: &SystemMetrics, stats_refreshed: bool) {
-        let area = frame.size();
+        let area = frame.area();
 
         let instructions = match self.mode {
             UiMode::Normal => "<q>/<Esc>: Quit | <o>: Options".bold(),
@@ -73,16 +76,16 @@ impl Ui {
             height: area.height - 4,
         };
 
-        let mut enabled_metrics: Vec<(&str, Box<dyn FnOnce(&mut Frame, Rect)>)> = vec![];
+        let mut enabled_metrics: Vec<Box<dyn FnOnce(&mut Frame, Rect)>> = vec![];
 
         if self.show_cpu {
             let cpu_data = system.cpu();
-            enabled_metrics.push(("cpu", Box::new(move |f, r| cpu::draw_chart(f, r, cpu_data))));
+            enabled_metrics.push(Box::new(move |f, r| cpu::draw_chart(f, r, cpu_data)));
         }
 
         if self.show_memory {
             let memory_data = system.memory();
-            enabled_metrics.push(("memory", Box::new(move |f, r| memory::draw_chart(f, r, memory_data))));
+            enabled_metrics.push(Box::new(move |f, r| memory::draw_chart(f, r, memory_data)));
         }
 
         if self.show_network {
@@ -90,15 +93,12 @@ impl Ui {
             let interfaces = network_data.interface_names();
             let selected = self.selected_interface.min(interfaces.len().saturating_sub(1));
             let selected_iface = interfaces.get(selected).cloned();
-            enabled_metrics.push((
-                "network",
-                Box::new(move |f, r| network::draw_chart(f, r, network_data, selected_iface.as_deref())),
-            ));
+            enabled_metrics.push(Box::new(move |f, r| network::draw_chart(f, r, network_data, selected_iface.as_deref())));
         }
 
         if self.show_gpu {
             if let Some(gpu_data) = system.gpu() {
-                enabled_metrics.push(("gpu", Box::new(move |f, r| gpu::draw_chart(f, r, gpu_data))));
+                enabled_metrics.push(Box::new(move |f, r| gpu::draw_chart(f, r, gpu_data)));
             }
         }
 
@@ -109,7 +109,7 @@ impl Ui {
             .split(inner_area)
             .to_vec();
 
-        for ((_, render_fn), chunk) in enabled_metrics.into_iter().zip(chunks) {
+        for (render_fn, chunk) in enabled_metrics.into_iter().zip(chunks) {
             render_fn(frame, chunk);
         }
 
@@ -134,9 +134,7 @@ impl Ui {
 
         let mut lines: Vec<String> = vec![];
 
-        // Update Interval at the top
-        let update_interval_idx = 0;
-        let cursor = if self.selected_option == update_interval_idx { ">" } else { " " };
+        let cursor = if self.selected_option == 0 { ">" } else { " " };
         let current_interval = self.update_interval_presets[self.selected_update_interval_idx];
         let interval_label = if current_interval.as_millis() < 1000 {
             format!("{} ms", current_interval.as_millis())
@@ -147,7 +145,6 @@ impl Ui {
         lines.push(format!(" {} Update Interval: {}", cursor, interval_label));
         lines.push(String::new());
 
-        // Metrics header
         lines.push(" Metrics:".bold().to_string());
         lines.push(String::new());
 
@@ -158,14 +155,12 @@ impl Ui {
             ("Network", self.show_network),
         ];
 
-        // Metric toggles, index shifted by 1 because update interval is now at 0
         for (i, (label, enabled)) in options.iter().enumerate() {
             let cursor = if self.selected_option == i + 1 { ">" } else { " " };
             let status = if *enabled { "[x]" } else { "[ ]" };
             lines.push(format!(" {} {} {}", cursor, status, label));
         }
 
-        // Interfaces
         if self.show_network && !interface_names.is_empty() {
             for (i, name) in interface_names.iter().enumerate() {
                 let cursor = if i == self.selected_interface { ">" } else { " " };
@@ -185,5 +180,4 @@ impl Ui {
         };
         frame.render_widget(paragraph, rect);
     }
-
 }

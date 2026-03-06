@@ -36,11 +36,10 @@ impl Default for Config {
 
 impl Config {
     fn default_config_path() -> PathBuf {
-        if let Some(proj_dirs) = ProjectDirs::from("com", "yourname", "rkhtop") {
+        if let Some(proj_dirs) = ProjectDirs::from("com", "sysvitals", "sysvitals") {
             proj_dirs.config_dir().join("config.toml")
         } else {
-            // fallback to current directory if none found
-            PathBuf::from("rkhtop_config.toml")
+            PathBuf::from("sysvitals_config.toml")
         }
     }
 
@@ -68,7 +67,8 @@ impl Config {
             fs::create_dir_all(parent)?;
         }
 
-        let toml = toml::to_string_pretty(self).unwrap();
+        let toml = toml::to_string_pretty(self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         fs::write(&self.config_path, toml)
     }
 }

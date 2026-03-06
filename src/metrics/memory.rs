@@ -15,7 +15,6 @@ pub struct MemoryMetrics {
 impl MemoryMetrics {
     /// Create a new memory metrics collector
     pub fn new(system: &System) -> Self {
-        let system = system;
         let used = system.used_memory();
         let total = system.total_memory();
         let percent = (used as f64 / total as f64) * 100.0;

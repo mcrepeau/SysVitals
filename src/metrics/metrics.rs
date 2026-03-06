@@ -37,9 +37,8 @@ impl SystemMetrics {
         }
     }
 
-    /// Update all metrics metrics
+    /// Update all metrics
     pub fn update(&mut self) -> Result<(), AppError> {
-        self.system.refresh_all();
         self.cpu.update(&mut self.system)?;
         self.memory.update(&mut self.system)?;
         self.network.update()?;

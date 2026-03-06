@@ -3,13 +3,13 @@
 use sysinfo::Networks;
 use crate::core::error::AppError;
 use crate::metrics::historical_metric::HistoricalMetric;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
 
 /// Network metrics
 pub struct NetworkMetrics {
     networks: Networks,
-    interface_stats: HashMap<String, (HistoricalMetric<f64>, HistoricalMetric<f64>)>,
+    interface_stats: BTreeMap<String, (HistoricalMetric<f64>, HistoricalMetric<f64>)>,
     last_update: Instant,
 }
 
@@ -18,7 +18,7 @@ impl NetworkMetrics {
     pub fn new() -> Self {
         Self {
             networks: Networks::new_with_refreshed_list(),
-            interface_stats: HashMap::new(),
+            interface_stats: BTreeMap::new(),
             last_update: Instant::now(),
         }
     }

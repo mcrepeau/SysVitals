@@ -1,6 +1,7 @@
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::prelude::{Color, Marker, Style, Stylize};
+use ratatui::prelude::{Color, Style, Stylize};
+use ratatui::symbols::Marker;
 use ratatui::widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph};
 
 pub fn draw_chart(frame: &mut Frame, area: Rect, memory: &crate::metrics::memory::MemoryMetrics) {
@@ -65,7 +66,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, memory: &crate::metrics::memory
             Axis::default()
                 .bounds([0.0, 100.0])
                 .style(Style::default().fg(Color::Gray))
-                .labels(vec!["0%".into(), "50%".into(), "100%".into()]),
+                .labels(["0%", "50%", "100%"]),
         );
 
     frame.render_widget(chart, chart_area);

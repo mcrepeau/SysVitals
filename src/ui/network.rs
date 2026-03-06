@@ -1,6 +1,7 @@
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::prelude::{Color, Marker, Style, Stylize};
+use ratatui::prelude::{Color, Style, Stylize};
+use ratatui::symbols::Marker;
 use ratatui::widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph};
 use crate::metrics::network::NetworkMetrics;
 
@@ -75,7 +76,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, network: &NetworkMetrics, selec
     let tx_dataset = Dataset::default()
         .name("TX")
         .marker(Marker::Braille)
-        .style(Style::default().fg(Color::Green))
+        .style(Style::default().fg(Color::Red))
         .graph_type(GraphType::Line)
         .data(&tx_trimmed);
 
@@ -94,7 +95,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, network: &NetworkMetrics, selec
             Axis::default()
                 .bounds([0.0, 1000.0])
                 .style(Style::default().fg(Color::Gray))
-                .labels(vec!["0".into(), "500".into(), "1000".into()]),
+                .labels(["0", "500", "1000"]),
         );
 
     let tx_chart = Chart::new(vec![tx_dataset])
@@ -112,7 +113,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, network: &NetworkMetrics, selec
             Axis::default()
                 .bounds([0.0, 1000.0])
                 .style(Style::default().fg(Color::Gray))
-                .labels(vec!["0".into(), "500".into(), "1000".into()]),
+                .labels(["0", "500", "1000"]),
         );
 
     let chart_chunks = Layout::default()
