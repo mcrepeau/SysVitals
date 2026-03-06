@@ -1,86 +1,87 @@
 # SysVitals
 
-SysVitals is a modern terminal-based system monitor written in Rust. It provides real-time system monitoring with a TUI (terminal user interface), displaying CPU, memory, network, and GPU statistics in a clear, interactive format.
+SysVitals is a lightweight terminal system monitor written in Rust. It displays live CPU, memory, disk, network, and GPU metrics in a clean TUI with two views: a scrolling chart history and a compact live-values bar view.
 
 ## Features
 
-- Real-time system monitoring
-- CPU, memory, network, and GPU usage statistics
-- Terminal-based UI using `ratatui`
-- Configurable refresh rate
-- Easy to quit with 'q' or 'Esc'
+- CPU usage, temperature, and load average (1/5/15 min)
+- Memory and swap usage
+- Disk I/O read/write rates
+- Network RX/TX rates, with per-interface selection
+- GPU compute and VRAM usage (NVIDIA only)
+- Two views: **chart** (scrolling history) and **compact bars** (live values)
+- Configurable refresh rate and per-panel visibility
+- Preferences saved automatically across sessions
+- CLI flags for quick one-off sessions
 
 ## Installation
 
-### Linux/MacOS
+### Linux/macOS
 
-Run `curl -fsSL https://github.com/mcrepeau/SysVitals/raw/refs/heads/main/install.sh | bash`
+```sh
+curl -fsSL https://github.com/mcrepeau/SysVitals/raw/refs/heads/main/install.sh | bash
+```
 
 ### Windows
 
-Run `irm https://github.com/mcrepeau/SysVitals/raw/refs/heads/main/install.ps1 | iex`
+```powershell
+irm https://github.com/mcrepeau/SysVitals/raw/refs/heads/main/install.ps1 | iex
+```
 
+## Usage
+
+```
+sysvitals [OPTIONS]
+
+OPTIONS:
+    -c, --compact          Start in compact bars view
+    -i, --interval <ms>    Refresh interval in ms (default: 1000, min: 100)
+        --no-cpu           Hide CPU panel
+        --no-memory        Hide memory panel
+        --no-gpu           Hide GPU panel
+        --no-disk          Hide disk panel
+        --no-network       Hide network panel
+    -h, --help             Print help
+```
 
 ## Compile from source
 
-### Pre-requisites
-- Rust (latest stable version)
-- Cargo (Rust's package manager)
+**Prerequisites:** Rust (latest stable) and Cargo.
 
-1. Clone the repository:
-
-    ```sh
-    git clone https://github.com/mcrepeau/sysvitals.git
-    cd sysvitals
-    ```
-
-2. Build the project:
-
-    ```sh
-    cargo build --release
-    ```
-
-3. Run the application:
-
-    ```sh
-    cargo run --release
-    ```
+```sh
+git clone https://github.com/mcrepeau/sysvitals.git
+cd sysvitals
+cargo build --release
+./target/release/sysvitals
+```
 
 ## Configuration
 
-The application uses a configuration file located at:
-- `~/.config/sysvitals/config.toml` for Unix systems
-- `~/Library/Application Support/sysvitals/config.toml` for MacOS
-- `%APPDATA%\sysvitals\config.toml` for Windows
+Preferences are saved automatically when changed via the options menu. The config file lives at:
+
+- Linux: `~/.config/sysvitals/config.toml`
+- macOS: `~/Library/Application Support/sysvitals/config.toml`
+- Windows: `%APPDATA%\sysvitals\config.toml`
 
 Example `config.toml`:
 
 ```toml
-refresh_rate = 500
+refresh_rate = 1000
 show_cpu = true
-show_memory = false
+show_memory = true
 show_gpu = true
 show_network = true
-selected_network_interface = 'Wi-Fi'
+show_disk = true
+compact_view = false
+selected_network_interface = "eth0"
 ```
 
-## Project Structure
+## Project structure
 
-The project is organized into several modules for better separation of concerns:
-
-- `src/core`: Core application logic, configuration, error handling, and the main event loop.
-- `src/metrics`: Modules for collecting system metrics (CPU, memory, network, GPU), including historical data tracking.
-- `src/ui`: Handles rendering the user interface for each metric and the main UI logic.
+- `src/core` — app state, event loop, config, CLI args, error handling
+- `src/metrics` — per-subsystem collectors (CPU, memory, disk, network, GPU) with rolling history
+- `src/ui` — chart and bar renderers, shared utilities in `chart_utils`
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [ratatui](https://github.com/tui-rs-revival/ratatui) for the terminal UI library.
-- [crossterm](https://github.com/crossterm-rs/crossterm) for terminal manipulation.
-- [sysinfo](https://github.com/GuillaumeGomez/sysinfo) for system information.
-- [tokio](https://github.com/tokio-rs/tokio) for asynchronous runtime.
-- [nvml-wrapper](https://github.com/robmikh/nvml-wrapper) for NVIDIA GPU monitoring.
-- [raw-cpuid](https://github.com/gz/rust-cpuid) for CPU information.
+MIT — see [LICENSE](LICENSE).
