@@ -23,13 +23,14 @@ impl App {
     /// Create a new application instance
     pub fn new() -> Result<Self, AppError> {
         let config = Config::load().unwrap_or_default();
-        let system = SystemMetrics::new();
+        let mut system = SystemMetrics::new();
         let mut ui = Ui::new();
 
         ui.show_cpu = config.show_cpu;
         ui.show_memory = config.show_memory;
         ui.show_gpu = config.show_gpu;
         ui.show_network = config.show_network;
+        ui.show_disk = config.show_disk;
 
         // Map refresh_rate ms to index in update_interval_presets
         let idx = ui.update_interval_presets
@@ -37,6 +38,9 @@ impl App {
             .position(|d| d.as_millis() as u64 == config.refresh_rate)
             .unwrap_or(1);
         ui.selected_update_interval_idx = idx;
+
+        // Size history buffers for the configured interval
+        system.resize_history(ui.update_interval_presets[idx]);
 
         // Find network interface index
         if let Some(ref iface) = config.selected_network_interface {
@@ -98,7 +102,6 @@ impl App {
                     }
                     KeyCode::Enter | KeyCode::Left | KeyCode::Right => {
                         if self.ui.selected_option == 0 {
-                            // Cycle update interval presets
                             let presets_len = self.ui.update_interval_presets.len();
                             if key_code == KeyCode::Enter || key_code == KeyCode::Right {
                                 self.ui.selected_update_interval_idx = (self.ui.selected_update_interval_idx + 1) % presets_len;
@@ -111,12 +114,12 @@ impl App {
                             }
                             config_changed = true;
                         } else {
-                            // Toggle metrics options (offset by 1 for update interval)
                             match self.ui.selected_option {
                                 1 => self.ui.show_cpu = !self.ui.show_cpu,
                                 2 => self.ui.show_memory = !self.ui.show_memory,
                                 3 => self.ui.show_gpu = !self.ui.show_gpu,
                                 4 => self.ui.show_network = !self.ui.show_network,
+                                5 => self.ui.show_disk = !self.ui.show_disk,
                                 _ => {}
                             }
                             config_changed = true;
@@ -136,11 +139,15 @@ impl App {
             }
 
             if config_changed {
-                self.config.refresh_rate = self.ui.update_interval_presets[self.ui.selected_update_interval_idx].as_millis() as u64;
+                let sample_interval = self.ui.update_interval_presets[self.ui.selected_update_interval_idx];
+                self.system.resize_history(sample_interval);
+
+                self.config.refresh_rate = sample_interval.as_millis() as u64;
                 self.config.show_cpu = self.ui.show_cpu;
                 self.config.show_memory = self.ui.show_memory;
                 self.config.show_gpu = self.ui.show_gpu;
                 self.config.show_network = self.ui.show_network;
+                self.config.show_disk = self.ui.show_disk;
 
                 let interfaces = self.system.network().interface_names();
                 if !interfaces.is_empty() && self.ui.selected_interface < interfaces.len() {

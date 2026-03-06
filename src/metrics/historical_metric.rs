@@ -39,4 +39,11 @@ impl<T: Clone> HistoricalMetric<T> {
     pub fn history(&self) -> &VecDeque<T> {
         &self.history
     }
+
+    pub fn resize(&mut self, new_max_len: usize) {
+        self.max_len = new_max_len;
+        while self.history.len() > new_max_len {
+            self.history.pop_front();
+        }
+    }
 }

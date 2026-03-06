@@ -11,11 +11,7 @@ pub fn run(mut app: App) -> Result<(), Box<dyn std::error::Error>> {
     let original_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic_info| {
         let _ = disable_raw_mode();
-        let _ = crossterm::execute!(
-            io::stdout(),
-            LeaveAlternateScreen,
-            crossterm::event::DisableMouseCapture
-        );
+        let _ = crossterm::execute!(io::stdout(), LeaveAlternateScreen);
         original_hook(panic_info);
     }));
 
@@ -51,17 +47,13 @@ fn run_loop(
 fn setup_terminal() -> Result<Terminal<CrosstermBackend<io::Stdout>>, io::Error> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    crossterm::execute!(stdout, EnterAlternateScreen, crossterm::event::EnableMouseCapture)?;
+    crossterm::execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     Terminal::new(backend)
 }
 
 fn cleanup_terminal() -> Result<(), io::Error> {
     disable_raw_mode()?;
-    crossterm::execute!(
-        io::stdout(),
-        LeaveAlternateScreen,
-        crossterm::event::DisableMouseCapture
-    )?;
+    crossterm::execute!(io::stdout(), LeaveAlternateScreen)?;
     Ok(())
 }

@@ -1,5 +1,5 @@
 use crate::metrics::SystemMetrics;
-use crate::ui::{cpu, memory, network, gpu};
+use crate::ui::{cpu, disk, gpu, memory, network};
 use ratatui::widgets::{Block, Borders, Paragraph, BorderType};
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
@@ -17,6 +17,7 @@ pub struct Ui {
     pub show_memory: bool,
     pub show_gpu: bool,
     pub show_network: bool,
+    pub show_disk: bool,
     pub selected_option: usize,
     pub selected_interface: usize,
     pub update_interval_presets: Vec<Duration>,
@@ -24,8 +25,9 @@ pub struct Ui {
 }
 
 impl Ui {
-    /// Number of navigable options in the options menu (update interval + 4 metric toggles).
-    pub const MENU_OPTION_COUNT: usize = 5;
+    /// Number of navigable options in the options menu:
+    /// update interval + CPU + Memory + GPU + Network + Disk
+    pub const MENU_OPTION_COUNT: usize = 6;
 
     pub fn new() -> Self {
         Self {
@@ -34,6 +36,7 @@ impl Ui {
             show_memory: true,
             show_gpu: true,
             show_network: true,
+            show_disk: true,
             selected_option: 0,
             selected_interface: 0,
             update_interval_presets: vec![
@@ -96,6 +99,11 @@ impl Ui {
             enabled_metrics.push(Box::new(move |f, r| network::draw_chart(f, r, network_data, selected_iface.as_deref())));
         }
 
+        if self.show_disk {
+            let disk_data = system.disk();
+            enabled_metrics.push(Box::new(move |f, r| disk::draw_chart(f, r, disk_data)));
+        }
+
         if self.show_gpu {
             if let Some(gpu_data) = system.gpu() {
                 enabled_metrics.push(Box::new(move |f, r| gpu::draw_chart(f, r, gpu_data)));
@@ -144,15 +152,15 @@ impl Ui {
 
         lines.push(format!(" {} Update Interval: {}", cursor, interval_label));
         lines.push(String::new());
-
         lines.push(" Metrics:".bold().to_string());
         lines.push(String::new());
 
         let options = [
-            ("CPU", self.show_cpu),
-            ("Memory", self.show_memory),
-            ("GPU", self.show_gpu),
+            ("CPU",     self.show_cpu),
+            ("Memory",  self.show_memory),
+            ("GPU",     self.show_gpu),
             ("Network", self.show_network),
+            ("Disk",    self.show_disk),
         ];
 
         for (i, (label, enabled)) in options.iter().enumerate() {

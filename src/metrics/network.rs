@@ -67,6 +67,13 @@ impl NetworkMetrics {
     pub fn get_interface_stats(&self, name: &str) -> Option<(&HistoricalMetric<f64>, &HistoricalMetric<f64>)> {
         self.interface_stats.get(name).map(|(rx, tx)| (rx, tx))
     }
+
+    pub fn resize_history(&mut self, len: usize) {
+        for (rx, tx) in self.interface_stats.values_mut() {
+            rx.resize(len);
+            tx.resize(len);
+        }
+    }
 }
 
 #[cfg(test)]

@@ -56,6 +56,11 @@ impl MemoryMetrics {
     pub fn used_bytes_history(&self) -> &VecDeque<u64> {
         self.used_bytes.history()
     }
+
+    pub fn resize_history(&mut self, len: usize) {
+        self.used_percent.resize(len);
+        self.used_bytes.resize(len);
+    }
 }
 
 

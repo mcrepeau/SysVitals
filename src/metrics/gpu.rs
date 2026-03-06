@@ -68,6 +68,11 @@ impl GpuMetrics {
     pub fn memory_history(&self) -> &VecDeque<f64> {
         self.memory_percent.history()
     }
+
+    pub fn resize_history(&mut self, len: usize) {
+        self.usage_percent.resize(len);
+        self.memory_percent.resize(len);
+    }
 }
 
 

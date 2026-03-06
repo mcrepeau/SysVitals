@@ -38,6 +38,10 @@ impl CpuMetrics {
     pub fn usage_history(&self) -> &VecDeque<f64> {
         self.usage_percent.history()
     }
+
+    pub fn resize_history(&mut self, len: usize) {
+        self.usage_percent.resize(len);
+    }
 }
 
 /// Get CPU name using sysinfo
