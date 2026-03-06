@@ -31,7 +31,7 @@ if [ -z "$TAG" ]; then
   exit 1
 fi
 
-ASSET_NAME="${BINARY}-${TAG}-${OS}-${ARCH}.tar.gz"
+ASSET_NAME="${BINARY}-${OS}-${ARCH}.tar.gz"
 DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$ASSET_NAME"
 
 echo "Downloading $DOWNLOAD_URL..."
