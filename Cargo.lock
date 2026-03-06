@@ -668,7 +668,7 @@ dependencies = [
 
 [[package]]
 name = "sysvitals"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "crossterm",
  "directories",
