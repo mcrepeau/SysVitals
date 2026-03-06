@@ -35,9 +35,6 @@ impl NetworkMetrics {
         }
 
         let elapsed_secs = elapsed.as_secs_f64();
-        if elapsed_secs == 0.0 {
-            return Ok(());
-        }
 
         for (name, data) in self.networks.iter() {
             let rx = data.received();

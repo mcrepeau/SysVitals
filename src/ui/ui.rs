@@ -25,9 +25,12 @@ pub struct Ui {
 }
 
 impl Ui {
-    /// Number of navigable options in the options menu:
-    /// update interval + CPU + Memory + GPU + Network + Disk
-    pub const MENU_OPTION_COUNT: usize = 6;
+    /// Number of toggleable metric panels (one per show_* field).
+    /// Increment this when adding a new panel.
+    pub const METRIC_COUNT: usize = 5; // CPU, Memory, GPU, Network, Disk
+
+    /// Total navigable items in the options menu: update interval + metrics.
+    pub const MENU_OPTION_COUNT: usize = Self::METRIC_COUNT + 1;
 
     pub fn new() -> Self {
         Self {
@@ -47,6 +50,19 @@ impl Ui {
             ],
             selected_update_interval_idx: 1,
         }
+    }
+
+    /// Returns the ordered list of metric toggle options for the options menu.
+    /// Each entry is `(label, current_enabled_state)`.
+    /// Keep in sync with `METRIC_COUNT`.
+    fn metric_options(&self) -> [(&'static str, bool); Self::METRIC_COUNT] {
+        [
+            ("CPU",     self.show_cpu),
+            ("Memory",  self.show_memory),
+            ("GPU",     self.show_gpu),
+            ("Network", self.show_network),
+            ("Disk",    self.show_disk),
+        ]
     }
 
     pub fn draw(&mut self, frame: &mut Frame, system: &SystemMetrics, stats_refreshed: bool) {
@@ -85,12 +101,10 @@ impl Ui {
             let cpu_data = system.cpu();
             enabled_metrics.push(Box::new(move |f, r| cpu::draw_chart(f, r, cpu_data)));
         }
-
         if self.show_memory {
             let memory_data = system.memory();
             enabled_metrics.push(Box::new(move |f, r| memory::draw_chart(f, r, memory_data)));
         }
-
         if self.show_network {
             let network_data = system.network();
             let interfaces = network_data.interface_names();
@@ -98,12 +112,10 @@ impl Ui {
             let selected_iface = interfaces.get(selected).cloned();
             enabled_metrics.push(Box::new(move |f, r| network::draw_chart(f, r, network_data, selected_iface.as_deref())));
         }
-
         if self.show_disk {
             let disk_data = system.disk();
             enabled_metrics.push(Box::new(move |f, r| disk::draw_chart(f, r, disk_data)));
         }
-
         if self.show_gpu {
             if let Some(gpu_data) = system.gpu() {
                 enabled_metrics.push(Box::new(move |f, r| gpu::draw_chart(f, r, gpu_data)));
@@ -121,25 +133,20 @@ impl Ui {
             render_fn(frame, chunk);
         }
 
+        // Blink dot: green on data refresh, invisible otherwise.
         let blink_style = if stats_refreshed {
             Style::default().fg(Color::Green)
         } else {
             Style::default().fg(Color::Black)
         };
-        let blink_dot = Paragraph::new("•")
-            .style(blink_style)
-            .block(Block::default().borders(Borders::NONE));
-        frame.render_widget(blink_dot, Rect {
-            x: area.x + area.width - 3,
-            y: area.y,
-            width: 1,
-            height: 1,
-        });
+        frame.render_widget(
+            Paragraph::new("•").style(blink_style).block(Block::default().borders(Borders::NONE)),
+            Rect { x: area.x + area.width - 3, y: area.y, width: 1, height: 1 },
+        );
     }
 
     fn draw_options_menu(&self, frame: &mut Frame, area: Rect, system: &SystemMetrics) {
         let interface_names = system.network().interface_names();
-
         let mut lines: Vec<String> = vec![];
 
         let cursor = if self.selected_option == 0 { ">" } else { " " };
@@ -149,30 +156,21 @@ impl Ui {
         } else {
             format!("{} s", current_interval.as_secs())
         };
-
-        lines.push(format!(" {} Update Interval: {}", cursor, interval_label));
+        lines.push(format!(" {cursor} Update Interval: {interval_label}"));
         lines.push(String::new());
         lines.push(" Metrics:".bold().to_string());
         lines.push(String::new());
 
-        let options = [
-            ("CPU",     self.show_cpu),
-            ("Memory",  self.show_memory),
-            ("GPU",     self.show_gpu),
-            ("Network", self.show_network),
-            ("Disk",    self.show_disk),
-        ];
-
-        for (i, (label, enabled)) in options.iter().enumerate() {
+        for (i, (label, enabled)) in self.metric_options().iter().enumerate() {
             let cursor = if self.selected_option == i + 1 { ">" } else { " " };
             let status = if *enabled { "[x]" } else { "[ ]" };
-            lines.push(format!(" {} {} {}", cursor, status, label));
+            lines.push(format!(" {cursor} {status} {label}"));
         }
 
         if self.show_network && !interface_names.is_empty() {
             for (i, name) in interface_names.iter().enumerate() {
                 let cursor = if i == self.selected_interface { ">" } else { " " };
-                lines.push(format!("     {} {}", cursor, name));
+                lines.push(format!("     {cursor} {name}"));
             }
         }
 
@@ -180,12 +178,17 @@ impl Ui {
             .block(Block::default().title("Options").borders(Borders::ALL))
             .style(Style::default().fg(Color::Yellow));
 
-        let rect = Rect {
+        frame.render_widget(paragraph, Rect {
             x: area.width / 4,
             y: area.height / 4,
             width: area.width / 2,
             height: area.height / 2,
-        };
-        frame.render_widget(paragraph, rect);
+        });
+    }
+}
+
+impl Default for Ui {
+    fn default() -> Self {
+        Self::new()
     }
 }

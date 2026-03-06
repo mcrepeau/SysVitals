@@ -26,11 +26,7 @@ impl App {
         let mut system = SystemMetrics::new();
         let mut ui = Ui::new();
 
-        ui.show_cpu = config.show_cpu;
-        ui.show_memory = config.show_memory;
-        ui.show_gpu = config.show_gpu;
-        ui.show_network = config.show_network;
-        ui.show_disk = config.show_disk;
+        Self::apply_config_to_ui_inner(&config, &mut ui);
 
         // Map refresh_rate ms to index in update_interval_presets
         let idx = ui.update_interval_presets
@@ -143,11 +139,7 @@ impl App {
                 self.system.resize_history(sample_interval);
 
                 self.config.refresh_rate = sample_interval.as_millis() as u64;
-                self.config.show_cpu = self.ui.show_cpu;
-                self.config.show_memory = self.ui.show_memory;
-                self.config.show_gpu = self.ui.show_gpu;
-                self.config.show_network = self.ui.show_network;
-                self.config.show_disk = self.ui.show_disk;
+                self.sync_ui_to_config();
 
                 let interfaces = self.system.network().interface_names();
                 if !interfaces.is_empty() && self.ui.selected_interface < interfaces.len() {
@@ -183,5 +175,25 @@ impl App {
     /// Check if the application should quit
     pub fn should_quit(&self) -> bool {
         self.should_quit
+    }
+
+    // ── Config ↔ Ui sync ─────────────────────────────────────────────────────
+
+    /// Called at startup (before `self` exists) to push Config into a fresh Ui.
+    fn apply_config_to_ui_inner(config: &Config, ui: &mut Ui) {
+        ui.show_cpu     = config.show_cpu;
+        ui.show_memory  = config.show_memory;
+        ui.show_gpu     = config.show_gpu;
+        ui.show_network = config.show_network;
+        ui.show_disk    = config.show_disk;
+    }
+
+    /// Pull the current Ui visibility state back into Config after any change.
+    fn sync_ui_to_config(&mut self) {
+        self.config.show_cpu     = self.ui.show_cpu;
+        self.config.show_memory  = self.ui.show_memory;
+        self.config.show_gpu     = self.ui.show_gpu;
+        self.config.show_network = self.ui.show_network;
+        self.config.show_disk    = self.ui.show_disk;
     }
 }

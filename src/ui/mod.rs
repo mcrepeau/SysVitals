@@ -1,3 +1,4 @@
+pub mod chart_utils;
 pub mod ui;
 pub mod cpu;
 pub mod disk;
