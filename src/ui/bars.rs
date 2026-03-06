@@ -87,8 +87,8 @@ pub fn draw_bars(
                 let tx = *tx_hist.current();
                 let rx_bound = dynamic_bound(rx_hist.history());
                 let tx_bound = dynamic_bound(tx_hist.history());
-                rows.push(Row::new("NET ↓", rx / rx_bound, Color::Green, format!("{} Mb/s", format_rate(rx))));
-                rows.push(Row::new("NET ↑", tx / tx_bound, Color::Red,   format!("{} Mb/s", format_rate(tx))));
+                rows.push(Row::new("NET ↓", rx / rx_bound, Color::Cyan, format!("{} Mb/s", format_rate(rx))));
+                rows.push(Row::new("NET ↑", tx / tx_bound, Color::Magenta,   format!("{} Mb/s", format_rate(tx))));
             }
         }
     }
@@ -99,8 +99,8 @@ pub fn draw_bars(
         let write = disk.write_rate();
         let read_bound  = dynamic_bound(disk.read_history());
         let write_bound = dynamic_bound(disk.write_history());
-        rows.push(Row::new("DISK ↓", read  / read_bound,  Color::Yellow, format!("{} MB/s", format_rate(read))));
-        rows.push(Row::new("DISK ↑", write / write_bound, Color::Blue, format!("{} MB/s", format_rate(write))));
+        rows.push(Row::new("DISK ↓", read  / read_bound,  Color::Cyan, format!("{} MB/s", format_rate(read))));
+        rows.push(Row::new("DISK ↑", write / write_bound, Color::Magenta, format!("{} MB/s", format_rate(write))));
     }
 
     if rows.is_empty() {

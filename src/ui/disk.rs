@@ -26,7 +26,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, disk: &DiskMetrics) {
 
     let read_chart = Chart::new(vec![Dataset::default()
         .marker(Marker::Braille)
-        .style(Style::default().fg(Color::Cyan))
+        .style(Style::default().fg(Color::Green))
         .graph_type(GraphType::Line)
         .data(&read_trimmed)])
     .block(Block::default()
@@ -42,7 +42,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, disk: &DiskMetrics) {
 
     let write_chart = Chart::new(vec![Dataset::default()
         .marker(Marker::Braille)
-        .style(Style::default().fg(Color::Blue))
+        .style(Style::default().fg(Color::Red))
         .graph_type(GraphType::Line)
         .data(&write_trimmed)])
     .block(Block::default()
