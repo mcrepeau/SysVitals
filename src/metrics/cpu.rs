@@ -8,7 +8,6 @@ use std::collections::VecDeque;
 /// CPU metrics
 pub struct CpuMetrics {
     pub name: Option<String>,
-    pub core_count: usize,
     usage_percent: HistoricalMetric<f64>,
     components: Components,
     temperature: Option<f64>,
@@ -22,7 +21,6 @@ impl CpuMetrics {
         let temperature = find_cpu_temp(&components);
         Self {
             name: get_cpu_name(system),
-            core_count: system.cpus().len(),
             usage_percent: HistoricalMetric::new(initial_usage),
             components,
             temperature,

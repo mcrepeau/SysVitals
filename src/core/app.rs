@@ -28,7 +28,6 @@ impl App {
         let mut ui = Ui::new();
 
         Self::apply_config_to_ui_inner(&config, &mut ui);
-        Self::apply_args_to_ui(args, &mut ui);
 
         // Map refresh_rate ms to index in update_interval_presets
         let idx = ui.update_interval_presets
@@ -37,8 +36,11 @@ impl App {
             .unwrap_or(1);
         ui.selected_update_interval_idx = idx;
 
-        // Size history buffers for the configured interval
-        system.resize_history(ui.update_interval_presets[idx]);
+        // Apply CLI args after config so --interval can override the preset index.
+        Self::apply_args_to_ui(args, &mut ui);
+
+        // Size history buffers using the final (possibly CLI-overridden) interval.
+        system.resize_history(ui.update_interval_presets[ui.selected_update_interval_idx]);
 
         // Find network interface index
         if let Some(ref iface) = config.selected_network_interface {

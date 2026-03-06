@@ -1,5 +1,6 @@
 use crate::metrics::SystemMetrics;
 use crate::ui::{bars, cpu, disk, gpu, memory, network};
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, BorderType};
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
@@ -169,7 +170,7 @@ impl Ui {
 
     fn draw_options_menu(&self, frame: &mut Frame, area: Rect, system: &SystemMetrics) {
         let interface_names = system.network().interface_names();
-        let mut lines: Vec<String> = vec![];
+        let mut lines: Vec<Line> = vec![];
 
         let cursor = if self.selected_option == 0 { ">" } else { " " };
         let current_interval = self.update_interval_presets[self.selected_update_interval_idx];
@@ -178,25 +179,25 @@ impl Ui {
         } else {
             format!("{} s", current_interval.as_secs())
         };
-        lines.push(format!(" {cursor} Update Interval: {interval_label}"));
-        lines.push(String::new());
-        lines.push(" Metrics:".bold().to_string());
-        lines.push(String::new());
+        lines.push(Line::raw(format!(" {cursor} Update Interval: {interval_label}")));
+        lines.push(Line::raw(""));
+        lines.push(Line::from(Span::styled(" Metrics:", Style::default().bold())));
+        lines.push(Line::raw(""));
 
         for (i, (label, enabled)) in self.metric_options().iter().enumerate() {
             let cursor = if self.selected_option == i + 1 { ">" } else { " " };
             let status = if *enabled { "[x]" } else { "[ ]" };
-            lines.push(format!(" {cursor} {status} {label}"));
+            lines.push(Line::raw(format!(" {cursor} {status} {label}")));
         }
 
         if self.show_network && !interface_names.is_empty() {
             for (i, name) in interface_names.iter().enumerate() {
                 let cursor = if i == self.selected_interface { ">" } else { " " };
-                lines.push(format!("     {cursor} {name}"));
+                lines.push(Line::raw(format!("     {cursor} {name}")));
             }
         }
 
-        let paragraph = Paragraph::new(lines.into_iter().map(|l| l.into()).collect::<Vec<_>>())
+        let paragraph = Paragraph::new(lines)
             .block(Block::default().title("Options").borders(Borders::ALL))
             .style(Style::default().fg(Color::White));
 
