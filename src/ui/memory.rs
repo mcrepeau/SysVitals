@@ -16,7 +16,7 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, memory: &crate::metrics::memory
         let swap_used_gb  = memory.swap_used_bytes() as f64 / 1024.0f64.powi(3);
         let swap_total_gb = memory.total_swap as f64 / 1024.0f64.powi(3);
         format!(
-            "🗃️ Memory ({:.1} / {:.1} GB)  Swap ({:.1} / {:.1} GB)",
+            "🗃️ Memory ({:.1} / {:.1} GB) | Swap ({:.1} / {:.1} GB)",
             used_gb, total_gb, swap_used_gb, swap_total_gb,
         )
     } else {

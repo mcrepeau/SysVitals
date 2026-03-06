@@ -15,10 +15,10 @@ pub fn draw_chart(frame: &mut Frame, area: Rect, cpu: &crate::metrics::cpu::CpuM
     let load = SystemMetrics::load_average();
 
     let temp_str = cpu.temperature()
-        .map(|t| format!("  {t:.0}°C"))
+        .map(|t| format!("| {t:.0}°C "))
         .unwrap_or_default();
     let title = format!(
-        "🧠 CPU - {} ({:.0}%){temp_str}  Load: {:.2} {:.2} {:.2}",
+        "🧠 CPU - {} ({:.0}%) {temp_str}| Load: {:.2} {:.2} {:.2}",
         cpu_name, usage, load.one, load.five, load.fifteen,
     );
 
